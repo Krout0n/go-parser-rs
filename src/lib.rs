@@ -1,4 +1,6 @@
-use nom::bytes::complete::tag;
+use std::collections::HashMap;
+
+use nom::{branch::alt, bytes::complete::tag};
 use nom::{
     bytes::streaming::take_while,
     character::complete::{char, space1},
@@ -7,9 +9,58 @@ use nom::{
 use nom::{character::complete::alpha1, IResult};
 
 #[derive(Debug, PartialEq)]
+pub enum GoType {
+    Int,
+    Uint8,
+    Uint16,
+    Uint32,
+    Uint64,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Float32,
+    Float64,
+    Complex64,
+    Complex128,
+    Byte,
+    Rune,
+    String,
+}
+
+impl From<&str> for GoType {
+    fn from(s: &str) -> Self {
+        match s {
+            "int" => GoType::Int,
+            "uint8" => GoType::Uint8,
+            "uint16" => GoType::Uint16,
+            "uint32" => GoType::Uint32,
+            "uint64" => GoType::Uint64,
+            "int8" => GoType::Int8,
+            "int16" => GoType::Int16,
+            "int32" => GoType::Int32,
+            "int64" => GoType::Int64,
+            "float32" => GoType::Float32,
+            "float64" => GoType::Float64,
+            "complex64" => GoType::Complex64,
+            "complex128" => GoType::Complex128,
+            "byte" => GoType::Byte,
+            "rune" => GoType::Rune,
+            "string" => GoType::String,
+            _ => unreachable!("{}", s),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum TopLevel {
     Pkg(String),
     Import(Vec<String>),
+    Function {
+        name: String,
+        args: HashMap<String, GoType>,
+        ret: GoType,
+    },
 }
 
 // PackageClause  = "package" PackageName .
@@ -30,6 +81,30 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
     // TODO: multiple '(' packages ')'
     let (s, pkg_path) = parse_string_literal(s)?;
     Ok((s, TopLevel::Import(vec![pkg_path.into()])))
+}
+
+fn parse_go_type(s: &str) -> IResult<&str, GoType> {
+    let t = (
+        tag("uint8"),
+        tag("uint16"),
+        tag("uint32"),
+        tag("uint64"),
+        tag("int8"),
+        tag("int16"),
+        tag("int32"),
+        tag("int64"),
+        tag("float32"),
+        tag("float64"),
+        tag("complex64"),
+        tag("complex128"),
+        tag("byte"),
+        tag("rune"),
+        tag("int"),
+        tag("string"),
+    );
+
+    let (s, typ) = alt(t)(s)?;
+    Ok((s, GoType::from(typ)))
 }
 
 // Thanks to drumato!
@@ -64,4 +139,24 @@ fn test_import_decl() {
 
     // import m "lib/math"
     // import . "lib/math"
+}
+
+#[test]
+fn test_go_type() {
+    assert_eq!(parse_go_type("int"), Ok(("", GoType::Int)));
+    assert_eq!(parse_go_type("uint8"), Ok(("", GoType::Uint8)));
+    assert_eq!(parse_go_type("uint16"), Ok(("", GoType::Uint16)));
+    assert_eq!(parse_go_type("uint32"), Ok(("", GoType::Uint32)));
+    assert_eq!(parse_go_type("uint64"), Ok(("", GoType::Uint64)));
+    assert_eq!(parse_go_type("int8"), Ok(("", GoType::Int8)));
+    assert_eq!(parse_go_type("int16"), Ok(("", GoType::Int16)));
+    assert_eq!(parse_go_type("int32"), Ok(("", GoType::Int32)));
+    assert_eq!(parse_go_type("int64"), Ok(("", GoType::Int64)));
+    assert_eq!(parse_go_type("float32"), Ok(("", GoType::Float32)));
+    assert_eq!(parse_go_type("float64"), Ok(("", GoType::Float64)));
+    assert_eq!(parse_go_type("complex64"), Ok(("", GoType::Complex64)));
+    assert_eq!(parse_go_type("complex128"), Ok(("", GoType::Complex128)));
+    assert_eq!(parse_go_type("byte"), Ok(("", GoType::Byte)));
+    assert_eq!(parse_go_type("rune"), Ok(("", GoType::Rune)));
+    assert_eq!(parse_go_type("string"), Ok(("", GoType::String)));
 }
