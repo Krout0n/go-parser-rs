@@ -55,12 +55,24 @@ impl From<&str> for GoType {
 #[derive(Debug, PartialEq)]
 pub enum TopLevel {
     Pkg(String),
-    Import(Vec<String>),
+    Import(Vec<ImportDeclaration>),
     Function {
         name: String,
         args: HashMap<String, GoType>,
         ret: GoType,
     },
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ImportDeclaration {
+    rename_as: Option<String>,
+    path: String,
+}
+
+impl ImportDeclaration {
+    fn new(rename_as: Option<String>, path: String) -> Self {
+        Self { rename_as, path }
+    }
 }
 
 // PackageClause  = "package" PackageName .
@@ -80,7 +92,10 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
     let (s, _) = space1(s)?;
     // TODO: multiple '(' packages ')'
     let (s, pkg_path) = parse_string_literal(s)?;
-    Ok((s, TopLevel::Import(vec![pkg_path.into()])))
+    Ok((
+        s,
+        TopLevel::Import(vec![ImportDeclaration::new(None, pkg_path.into())]),
+    ))
 }
 
 fn parse_go_type(s: &str) -> IResult<&str, GoType> {
@@ -134,7 +149,10 @@ fn test_import_decl() {
     // import   "lib/math"
     assert_eq!(
         parse_import_decl("import \"lib/math\""),
-        Ok(("", TopLevel::Import(vec!["lib/math".into()])))
+        Ok((
+            "",
+            TopLevel::Import(vec![ImportDeclaration::new(None, "lib/math".into())])
+        ))
     );
 
     // import m "lib/math"
