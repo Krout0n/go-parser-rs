@@ -23,3 +23,15 @@ pub fn parse_decimal_digit(s: &str) -> IResult<&str, char> {
 pub fn parse_octal_digit(s: &str) -> IResult<&str, char> {
     one_of("01234567")(s)
 }
+
+///
+/// ```
+/// use go_parser_rs::letter_and_digit::parse_binary_digit;
+/// use nom::{Err, error::{Error,ErrorKind}};
+/// assert_eq!(parse_binary_digit("01c"), Ok(("1c", '0')));
+/// assert_eq!(parse_binary_digit("1c"), Ok(("c", '1')));
+/// assert_eq!(parse_binary_digit(""), Err(Err::Error(Error::new("", ErrorKind::OneOf))));
+/// ```
+pub fn parse_binary_digit(s: &str) -> IResult<&str, char> {
+    one_of("01")(s)
+}
