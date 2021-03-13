@@ -2,7 +2,6 @@ use std::collections::HashMap;
 mod parse_util;
 
 use nom::{
-    branch::alt,
     bytes::complete::tag,
     character::complete::{alphanumeric1, space0},
     combinator::opt,
@@ -118,26 +117,7 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
 }
 
 fn parse_go_type(s: &str) -> IResult<&str, GoType> {
-    let t = (
-        tag("uint8"),
-        tag("uint16"),
-        tag("uint32"),
-        tag("uint64"),
-        tag("int8"),
-        tag("int16"),
-        tag("int32"),
-        tag("int64"),
-        tag("float32"),
-        tag("float64"),
-        tag("complex64"),
-        tag("complex128"),
-        tag("byte"),
-        tag("rune"),
-        tag("int"),
-        tag("string"),
-    );
-
-    let (s, typ) = alt(t)(s)?;
+    let (s, typ) = identifier(s)?;
     Ok((s, GoType::from(typ)))
 }
 
