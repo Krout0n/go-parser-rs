@@ -164,13 +164,14 @@ fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
 // ParameterDecl  = [ IdentifierList ] [ "..." ] Type .
 fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
     // (x int)
+    // ()
     // TODO: (x, y int)
     // TODO: (x int, y string)
     let (s, _) = space0(s)?;
     let parser = tuple((alphanumeric1, space1, parse_go_type));
-    let (s, (name, _, typ)) = delimited(char('('), parser, char(')'))(s)?;
+    let (s, arg_types_opt) = delimited(char('('), opt(parser), char(')'))(s)?;
     let mut m = HashMap::new();
-    m.insert(name, typ);
+    arg_types_opt.map(|(name, _, typ)| m.insert(name, typ));
     Ok((s, ArgTypes(m)))
 }
 
