@@ -151,10 +151,8 @@ fn parse_string_literal(i: &str) -> nom::IResult<&str, &str> {
 // FunctionDecl = "func" FunctionName Signature [ FunctionBody ] .
 // FunctionBody = . // TODO: Implement block.
 fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
-    let (s, _) = space0(s)?;
-    let (s, _) = tag("func")(s)?;
-    let (s, _) = space1(s)?;
-    let (s, name) = alphanumeric1(s)?;
+    let (s, _) = reserved("func")(s)?;
+    let (s, name) = identifier(s)?;
     let (s, args) = parse_parameters(s)?;
     let ret = GoType::Int;
     Ok((s, Function { name, args, ret }))
