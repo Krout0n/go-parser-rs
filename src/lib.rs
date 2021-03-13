@@ -1,13 +1,9 @@
 use std::collections::HashMap;
 mod parse_util;
 
-use nom::{bytes::complete::tag, combinator::opt, sequence::tuple};
-use nom::{
-    bytes::streaming::take_while,
-    character::complete::{char, space1},
-    sequence::delimited,
-};
-use nom::{character::complete::alpha1, IResult};
+use nom::IResult;
+use nom::{bytes::streaming::take_while, character::complete::char, sequence::delimited};
+use nom::{combinator::opt, sequence::tuple};
 
 use maplit::hashmap;
 use parse_util::{identifier, reserved, symbol};
@@ -88,9 +84,8 @@ impl<'a> ImportDeclaration<'a> {
 // PackageClause  = "package" PackageName .
 // PackageName    = identifier .
 pub fn parse_package_clause(s: &str) -> IResult<&str, TopLevel> {
-    let (s, _) = tag("package")(s)?;
-    let (s, _) = space1(s)?;
-    let (s, pkg_name) = alpha1(s)?;
+    let (s, _) = reserved("package")(s)?;
+    let (s, pkg_name) = identifier(s)?;
     Ok((s, TopLevel::Pkg(pkg_name)))
 }
 
