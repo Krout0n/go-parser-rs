@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use nom::{branch::alt, bytes::complete::tag};
+use nom::{branch::alt, bytes::complete::tag, character::complete::alphanumeric1, combinator::opt};
 use nom::{
     bytes::streaming::take_while,
     character::complete::{char, space1},
@@ -91,10 +91,15 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
     let (s, _) = tag("import")(s)?;
     let (s, _) = space1(s)?;
     // TODO: multiple '(' packages ')'
+    let (s, rename_as) = opt(alphanumeric1)(s)?;
+    let (s, _) = space1(s)?;
     let (s, pkg_path) = parse_string_literal(s)?;
     Ok((
         s,
-        TopLevel::Import(vec![ImportDeclaration::new(None, pkg_path.into())]),
+        TopLevel::Import(vec![ImportDeclaration::new(
+            rename_as.map(|r| r.into()),
+            pkg_path.into(),
+        )]),
     ))
 }
 
@@ -152,6 +157,17 @@ fn test_import_decl() {
         Ok((
             "",
             TopLevel::Import(vec![ImportDeclaration::new(None, "lib/math".into())])
+        ))
+    );
+
+    assert_eq!(
+        parse_import_decl("import m \"lib/math\""),
+        Ok((
+            "",
+            TopLevel::Import(vec![ImportDeclaration::new(
+                Some("m".into()),
+                "lib/math".into()
+            )])
         ))
     );
 
