@@ -1,15 +1,15 @@
-use std::collections::HashMap;
 mod parse_util;
 
 use nom::{
     bytes::streaming::take_while,
+    character::complete::space0,
+    combinator::opt,
     multi::many0,
+    sequence::tuple,
     sequence::{delimited, preceded},
+    IResult,
 };
-use nom::{character::complete::space0, IResult};
-use nom::{combinator::opt, sequence::tuple};
 
-use maplit::hashmap;
 use parse_util::{identifier, reserved, symbol};
 
 #[derive(Debug, PartialEq)]
@@ -57,12 +57,9 @@ impl From<&str> for GoType {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ArgTypes<'a>(HashMap<&'a str, GoType>);
-
-#[derive(Debug, PartialEq)]
 pub struct Function<'a> {
     pub name: &'a str,
-    pub args: ArgTypes<'a>,
+    pub params: Parameters<'a>,
     pub ret: GoType,
 }
 
@@ -129,23 +126,20 @@ fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
     // func f (x int) string
     let (s, _) = reserved("func")(s)?;
     let (s, name) = identifier(s)?;
-    let (s, args) = parse_parameters(s)?;
+    let (s, params) = parse_parameters(s)?;
     let (s, ret) = parse_go_type(s)?;
     let (s, _) = space0(s)?;
-    Ok((s, Function { name, args, ret }))
+    Ok((s, Function { name, params, ret }))
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Parameters<'a>(Option<ParameterList<'a>>);
 // Parameters     = "(" [ ParameterList [ "," ] ] ")" .
-fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
-    // (x int)
-    // ()
-    // TODO: (x, y int)
-    // TODO: (x int, y string)
-    let parser = tuple((identifier, parse_go_type));
-    let (s, arg_types_opt) = delimited(symbol('('), opt(parser), symbol(')'))(s)?;
-    let mut m = HashMap::new();
-    arg_types_opt.map(|(name, typ)| m.insert(name, typ));
-    Ok((s, ArgTypes(m)))
+fn parse_parameters(s: &str) -> IResult<&str, Parameters> {
+    let parse_parameter_list_opt = opt(tuple((parse_parameter_list, opt(symbol(',')))));
+    let (s, parameter_list_opt) = delimited(symbol('('), parse_parameter_list_opt, symbol(')'))(s)?;
+    let parameter_list = parameter_list_opt.map(|(s, _)| s);
+    Ok((s, Parameters(parameter_list)))
 }
 
 #[derive(Debug, PartialEq)]
@@ -248,25 +242,53 @@ fn test_go_type() {
 
 #[test]
 fn test_parameters() {
-    let map = hashmap! {"x" => GoType::Int};
-    assert_eq!(parse_parameters("(x int)"), Ok(("", ArgTypes(map))));
-}
-
-#[test]
-fn test_func_decl() {
-    let map = hashmap! {"x" => GoType::Int};
     assert_eq!(
-        parse_function_decl("func f (x int) string"),
+        parse_parameters("(x int)"),
         Ok((
             "",
-            Function {
-                name: "f",
-                args: ArgTypes(map),
-                ret: GoType::String
-            }
+            Parameters(Some(ParameterList(vec![ParameterDecl {
+                identifiers: Some(vec!["x"]),
+                is_variadic: false,
+                go_type: GoType::Int
+            }])))
+        ))
+    );
+
+    assert_eq!(
+        parse_parameters("(x, y int, z string)"),
+        Ok((
+            "",
+            Parameters(Some(ParameterList(vec![
+                ParameterDecl {
+                    identifiers: Some(vec!["x", "y"]),
+                    is_variadic: false,
+                    go_type: GoType::Int
+                },
+                ParameterDecl {
+                    identifiers: Some(vec!["z"]),
+                    is_variadic: false,
+                    go_type: GoType::String
+                }
+            ])))
         ))
     );
 }
+
+// #[test]
+// fn test_func_decl() {
+//     let map = hashmap! {"x" => GoType::Int};
+//     assert_eq!(
+//         parse_function_decl("func f (x int) string"),
+//         Ok((
+//             "",
+//             Function {
+//                 name: "f",
+//                 args: ArgTypes(map),
+//                 ret: GoType::String
+//             }
+//         ))
+//     );
+// }
 
 #[test]
 fn test_parameter_list() {
