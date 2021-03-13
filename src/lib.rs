@@ -136,7 +136,6 @@ fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
 }
 
 // Parameters     = "(" [ ParameterList [ "," ] ] ")" .
-// ParameterList  = ParameterDecl { "," ParameterDecl } .
 fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
     // (x int)
     // ()
@@ -147,6 +146,16 @@ fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
     let mut m = HashMap::new();
     arg_types_opt.map(|(name, typ)| m.insert(name, typ));
     Ok((s, ArgTypes(m)))
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ParameterList<'a>(Vec<ParameterDecl<'a>>);
+// ParameterList  = ParameterDecl { "," ParameterDecl } .
+fn parse_parameter_list<'a>(s: &'a str) -> IResult<&'a str, ParameterList<'a>> {
+    let (s, f) = parse_parameter_decl(s)?;
+    let (s, mut decls) = many0(preceded(symbol(','), parse_parameter_decl))(s)?;
+    decls.insert(0, f);
+    Ok((s, ParameterList(decls)))
 }
 
 #[derive(Debug, PartialEq)]
@@ -255,6 +264,40 @@ fn test_func_decl() {
                 args: ArgTypes(map),
                 ret: GoType::String
             }
+        ))
+    );
+}
+
+#[test]
+fn test_parameter_list() {
+    assert_eq!(
+        parse_parameter_list("x int"),
+        Ok((
+            "",
+            ParameterList(vec![ParameterDecl {
+                identifiers: Some(vec!["x"]),
+                is_variadic: false,
+                go_type: GoType::Int
+            }])
+        ))
+    );
+
+    assert_eq!(
+        parse_parameter_list("x, y int, z string"),
+        Ok((
+            "",
+            ParameterList(vec![
+                ParameterDecl {
+                    identifiers: Some(vec!["x", "y"]),
+                    is_variadic: false,
+                    go_type: GoType::Int
+                },
+                ParameterDecl {
+                    identifiers: Some(vec!["z"]),
+                    is_variadic: false,
+                    go_type: GoType::String
+                }
+            ])
         ))
     );
 }
