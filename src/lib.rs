@@ -56,9 +56,9 @@ impl From<&str> for GoType {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum TopLevel {
-    Pkg(String),
-    Import(Vec<ImportDeclaration>),
+pub enum TopLevel<'a> {
+    Pkg(&'a str),
+    Import(Vec<ImportDeclaration<'a>>),
     Function {
         name: String,
         args: HashMap<String, GoType>,
@@ -67,13 +67,13 @@ pub enum TopLevel {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ImportDeclaration {
-    pkg_name_opt: Option<String>,
-    path: String,
+pub struct ImportDeclaration<'a> {
+    pkg_name_opt: Option<&'a str>,
+    path: &'a str,
 }
 
-impl ImportDeclaration {
-    fn new(pkg_name_opt: Option<String>, path: String) -> Self {
+impl<'a> ImportDeclaration<'a> {
+    fn new(pkg_name_opt: Option<&'a str>, path: &'a str) -> Self {
         Self { pkg_name_opt, path }
     }
 }
@@ -84,7 +84,7 @@ pub fn parse_package_clause(s: &str) -> IResult<&str, TopLevel> {
     let (s, _) = tag("package")(s)?;
     let (s, _) = space1(s)?;
     let (s, pkg_name) = alpha1(s)?;
-    Ok((s, TopLevel::Pkg(pkg_name.into())))
+    Ok((s, TopLevel::Pkg(pkg_name)))
 }
 
 // ImportDecl       = "import" ( ImportSpec | "(" { ImportSpec ";" } ")" ) .
@@ -104,10 +104,7 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
     let (s, pkg_path) = parse_string_literal(s)?;
     Ok((
         s,
-        TopLevel::Import(vec![ImportDeclaration::new(
-            pkg_name_opt.map(|r| r.into()),
-            pkg_path.into(),
-        )]),
+        TopLevel::Import(vec![ImportDeclaration::new(pkg_name_opt, pkg_path)]),
     ))
 }
 
@@ -146,12 +143,12 @@ fn parse_string_literal(i: &str) -> nom::IResult<&str, &str> {
 fn test_pkg_stmt() {
     assert_eq!(
         parse_package_clause("package main"),
-        Ok(("", TopLevel::Pkg("main".into())))
+        Ok(("", TopLevel::Pkg("main")))
     );
 
     assert_eq!(
         parse_package_clause("package main\n"),
-        Ok(("\n", TopLevel::Pkg("main".into())))
+        Ok(("\n", TopLevel::Pkg("main")))
     );
 
     assert!(parse_package_clause("packagemain").is_err())
@@ -164,7 +161,7 @@ fn test_import_decl() {
         parse_import_decl("import \"lib/math\""),
         Ok((
             "",
-            TopLevel::Import(vec![ImportDeclaration::new(None, "lib/math".into())])
+            TopLevel::Import(vec![ImportDeclaration::new(None, "lib/math")])
         ))
     );
 
@@ -173,10 +170,7 @@ fn test_import_decl() {
         parse_import_decl("import m \"lib/math\""),
         Ok((
             "",
-            TopLevel::Import(vec![ImportDeclaration::new(
-                Some("m".into()),
-                "lib/math".into()
-            )])
+            TopLevel::Import(vec![ImportDeclaration::new(Some("m"), "lib/math")])
         ))
     );
 
