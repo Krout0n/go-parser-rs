@@ -1,11 +1,12 @@
 use std::collections::HashMap;
+mod parse_util;
 
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{alphanumeric1, space0},
     combinator::opt,
-    sequence::{pair, tuple},
+    sequence::tuple,
 };
 use nom::{
     bytes::streaming::take_while,
@@ -15,6 +16,7 @@ use nom::{
 use nom::{character::complete::alpha1, IResult};
 
 use maplit::hashmap;
+use parse_util::{identifier, reserved};
 
 #[derive(Debug, PartialEq)]
 pub enum GoType {
@@ -102,13 +104,12 @@ pub fn parse_package_clause(s: &str) -> IResult<&str, TopLevel> {
 // ImportSpec       = [ "." | PackageName ] ImportPath .
 // ImportPath       = string_lit .
 pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
-    let (s, _) = tag("import")(s)?;
-    let (s, _) = space1(s)?;
+    let (s, _) = reserved("import")(s)?;
     // TODO: multiple '(' packages ')'
-    let mut parser = opt(pair(alphanumeric1, space1));
+    let mut parser = opt(identifier);
     let (s, _pkg_name_opt) = parser(s)?;
     // Take the left value for package name.
-    let pkg_name_opt = _pkg_name_opt.map(|(pkg_name, _)| pkg_name);
+    let pkg_name_opt = _pkg_name_opt.map(|s| s);
     let (s, pkg_path) = parse_string_literal(s)?;
     Ok((
         s,
