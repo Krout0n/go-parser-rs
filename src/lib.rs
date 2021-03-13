@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use nom::{branch::alt, bytes::complete::tag, character::complete::alphanumeric1, combinator::opt};
+use nom::{
+    branch::alt, bytes::complete::tag, character::complete::alphanumeric1, combinator::opt,
+    sequence::pair,
+};
 use nom::{
     bytes::streaming::take_while,
     character::complete::{char, space1},
@@ -65,13 +68,13 @@ pub enum TopLevel {
 
 #[derive(Debug, PartialEq)]
 pub struct ImportDeclaration {
-    rename_as: Option<String>,
+    pkg_name_opt: Option<String>,
     path: String,
 }
 
 impl ImportDeclaration {
-    fn new(rename_as: Option<String>, path: String) -> Self {
-        Self { rename_as, path }
+    fn new(pkg_name_opt: Option<String>, path: String) -> Self {
+        Self { pkg_name_opt, path }
     }
 }
 
@@ -91,13 +94,18 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
     let (s, _) = tag("import")(s)?;
     let (s, _) = space1(s)?;
     // TODO: multiple '(' packages ')'
-    let (s, rename_as) = opt(alphanumeric1)(s)?;
-    let (s, _) = space1(s)?;
+    let mut parser = opt(pair(alphanumeric1, space1));
+    let (s, pkg_name_opt_opt) = parser(s)?;
+    let pkg_name_opt = if let Some((pkg_name_opt, _)) = pkg_name_opt_opt {
+        Some(pkg_name_opt)
+    } else {
+        None
+    };
     let (s, pkg_path) = parse_string_literal(s)?;
     Ok((
         s,
         TopLevel::Import(vec![ImportDeclaration::new(
-            rename_as.map(|r| r.into()),
+            pkg_name_opt.map(|r| r.into()),
             pkg_path.into(),
         )]),
     ))
@@ -160,6 +168,7 @@ fn test_import_decl() {
         ))
     );
 
+    // import m "lib/math"
     assert_eq!(
         parse_import_decl("import m \"lib/math\""),
         Ok((
@@ -171,7 +180,6 @@ fn test_import_decl() {
         ))
     );
 
-    // import m "lib/math"
     // import . "lib/math"
 }
 
