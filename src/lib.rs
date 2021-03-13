@@ -2,7 +2,7 @@ use std::collections::HashMap;
 mod parse_util;
 
 use nom::IResult;
-use nom::{bytes::streaming::take_while, character::complete::char, sequence::delimited};
+use nom::{bytes::streaming::take_while, sequence::delimited};
 use nom::{combinator::opt, sequence::tuple};
 
 use maplit::hashmap;
@@ -114,7 +114,7 @@ fn parse_go_type(s: &str) -> IResult<&str, GoType> {
 // Thanks to drumato!
 // https://github.com/Drumato/peachili/blob/codegen/src/compiler/common/frontend/pass/parser/primitive.rs#L14
 fn parse_string_literal(i: &str) -> nom::IResult<&str, &str> {
-    let (rest, contents) = delimited(char('"'), take_while(|b: char| b != '"'), char('"'))(i)?;
+    let (rest, contents) = delimited(symbol('"'), take_while(|b: char| b != '"'), symbol('"'))(i)?;
     Ok((rest, contents))
 }
 
