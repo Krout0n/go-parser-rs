@@ -1,12 +1,7 @@
 use std::collections::HashMap;
 mod parse_util;
 
-use nom::{
-    bytes::complete::tag,
-    character::complete::{alphanumeric1, space0},
-    combinator::opt,
-    sequence::tuple,
-};
+use nom::{bytes::complete::tag, combinator::opt, sequence::tuple};
 use nom::{
     bytes::streaming::take_while,
     character::complete::{char, space1},
@@ -15,7 +10,7 @@ use nom::{
 use nom::{character::complete::alpha1, IResult};
 
 use maplit::hashmap;
-use parse_util::{identifier, reserved};
+use parse_util::{identifier, reserved, symbol};
 
 #[derive(Debug, PartialEq)]
 pub enum GoType {
@@ -146,11 +141,10 @@ fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
     // ()
     // TODO: (x, y int)
     // TODO: (x int, y string)
-    let (s, _) = space0(s)?;
-    let parser = tuple((alphanumeric1, space1, parse_go_type));
-    let (s, arg_types_opt) = delimited(char('('), opt(parser), char(')'))(s)?;
+    let parser = tuple((identifier, parse_go_type));
+    let (s, arg_types_opt) = delimited(symbol('('), opt(parser), symbol(')'))(s)?;
     let mut m = HashMap::new();
-    arg_types_opt.map(|(name, _, typ)| m.insert(name, typ));
+    arg_types_opt.map(|(name, typ)| m.insert(name, typ));
     Ok((s, ArgTypes(m)))
 }
 
