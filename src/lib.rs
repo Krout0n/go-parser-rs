@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 mod parse_util;
 
-use nom::IResult;
 use nom::{bytes::streaming::take_while, sequence::delimited};
+use nom::{character::complete::space0, IResult};
 use nom::{combinator::opt, sequence::tuple};
 
 use maplit::hashmap;
@@ -108,6 +108,7 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
 
 fn parse_go_type(s: &str) -> IResult<&str, GoType> {
     let (s, typ) = identifier(s)?;
+    let (s, _) = space0(s)?;
     Ok((s, GoType::from(typ)))
 }
 
@@ -121,10 +122,12 @@ fn parse_string_literal(i: &str) -> nom::IResult<&str, &str> {
 // FunctionDecl = "func" FunctionName Signature [ FunctionBody ] .
 // FunctionBody = . // TODO: Implement block.
 fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
+    // func f (x int) string
     let (s, _) = reserved("func")(s)?;
     let (s, name) = identifier(s)?;
     let (s, args) = parse_parameters(s)?;
-    let ret = GoType::Int;
+    let (s, ret) = parse_go_type(s)?;
+    let (s, _) = space0(s)?;
     Ok((s, Function { name, args, ret }))
 }
 
@@ -205,4 +208,20 @@ fn test_go_type() {
 fn test_parameters() {
     let map = hashmap! {"x" => GoType::Int};
     assert_eq!(parse_parameters("(x int)"), Ok(("", ArgTypes(map))));
+}
+
+#[test]
+fn test_func_decl() {
+    let map = hashmap! {"x" => GoType::Int};
+    assert_eq!(
+        parse_function_decl("func f (x int) string"),
+        Ok((
+            "",
+            Function {
+                name: "f",
+                args: ArgTypes(map),
+                ret: GoType::String
+            }
+        ))
+    );
 }
