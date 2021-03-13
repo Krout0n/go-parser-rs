@@ -137,7 +137,6 @@ fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
 
 // Parameters     = "(" [ ParameterList [ "," ] ] ")" .
 // ParameterList  = ParameterDecl { "," ParameterDecl } .
-// ParameterDecl  = [ IdentifierList ] [ "..." ] Type .
 fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
     // (x int)
     // ()
@@ -148,6 +147,28 @@ fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
     let mut m = HashMap::new();
     arg_types_opt.map(|(name, typ)| m.insert(name, typ));
     Ok((s, ArgTypes(m)))
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ParameterDecl<'a> {
+    identifiers: Option<Vec<&'a str>>,
+    is_variadic: bool,
+    go_type: GoType,
+}
+// ParameterDecl  = [ IdentifierList ] [ "..." ] Type .
+fn parse_parameter_decl(s: &str) -> IResult<&str, ParameterDecl> {
+    let (s, identifiers) = opt(parse_identifier_list)(s)?;
+    let (s, is_variadic_opt) = opt(reserved("..."))(s)?;
+    let is_variadic = is_variadic_opt.is_some();
+    let (s, go_type) = parse_go_type(s)?;
+    Ok((
+        s,
+        ParameterDecl {
+            identifiers,
+            is_variadic,
+            go_type,
+        },
+    ))
 }
 
 // IdentifierList = identifier { "," identifier } .
@@ -233,6 +254,45 @@ fn test_func_decl() {
                 name: "f",
                 args: ArgTypes(map),
                 ret: GoType::String
+            }
+        ))
+    );
+}
+
+#[test]
+fn test_parameter_decl() {
+    assert_eq!(
+        parse_parameter_decl("x int"),
+        Ok((
+            "",
+            ParameterDecl {
+                identifiers: Some(vec!["x"]),
+                is_variadic: false,
+                go_type: GoType::Int
+            }
+        ))
+    );
+
+    assert_eq!(
+        parse_parameter_decl("x, y int"),
+        Ok((
+            "",
+            ParameterDecl {
+                identifiers: Some(vec!["x", "y"]),
+                is_variadic: false,
+                go_type: GoType::Int
+            }
+        ))
+    );
+
+    assert_eq!(
+        parse_parameter_decl("x, y ... int"),
+        Ok((
+            "",
+            ParameterDecl {
+                identifiers: Some(vec!["x", "y"]),
+                is_variadic: true,
+                go_type: GoType::Int
             }
         ))
     );
