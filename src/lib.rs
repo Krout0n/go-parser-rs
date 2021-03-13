@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 mod parse_util;
 
-use nom::{bytes::streaming::take_while, sequence::delimited};
+use nom::{
+    bytes::streaming::take_while,
+    multi::many0,
+    sequence::{delimited, preceded},
+};
 use nom::{character::complete::space0, IResult};
 use nom::{combinator::opt, sequence::tuple};
 
@@ -146,6 +150,14 @@ fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
     Ok((s, ArgTypes(m)))
 }
 
+// IdentifierList = identifier { "," identifier } .
+fn parse_identifier_list(s: &str) -> IResult<&str, Vec<&str>> {
+    let (s, i) = identifier(s)?;
+    let (s, mut result) = many0(preceded(symbol(','), identifier))(s)?;
+    result.insert(0, i);
+    Ok((s, result))
+}
+
 #[test]
 fn test_pkg_stmt() {
     assert_eq!(
@@ -224,4 +236,11 @@ fn test_func_decl() {
             }
         ))
     );
+}
+
+#[test]
+fn test_identifier_list() {
+    assert_eq!(parse_identifier_list("x"), Ok(("", vec!["x"])));
+    assert_eq!(parse_identifier_list("x, y"), Ok(("", vec!["x", "y"])));
+    assert_eq!(parse_identifier_list("x, y z"), Ok(("z", vec!["x", "y"])));
 }
