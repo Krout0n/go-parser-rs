@@ -120,6 +120,15 @@ fn parse_string_literal(i: &str) -> nom::IResult<&str, &str> {
     Ok((rest, contents))
 }
 
+#[derive(Debug, PartialEq)]
+pub struct QualifiedIdent<'a>(&'a str, &'a str);
+fn parse_qualified_ident<'a>(s: &'a str) -> IResult<&'a str, QualifiedIdent<'a>> {
+    let (s, pkg_name) = identifier(s)?;
+    let (s, _) = symbol('.')(s)?;
+    let (s, ident) = identifier(s)?;
+    Ok((s, QualifiedIdent(pkg_name, ident)))
+}
+
 // FunctionDecl = "func" FunctionName Signature [ FunctionBody ] .
 // FunctionBody = . // TODO: Implement block.
 fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
@@ -238,6 +247,14 @@ fn test_go_type() {
     assert_eq!(parse_go_type("byte"), Ok(("", GoType::Byte)));
     assert_eq!(parse_go_type("rune"), Ok(("", GoType::Rune)));
     assert_eq!(parse_go_type("string"), Ok(("", GoType::String)));
+}
+
+#[test]
+fn test_qualified_ident() {
+    assert_eq!(
+        parse_qualified_ident("x.y"),
+        Ok(("", QualifiedIdent("x", "y")))
+    )
 }
 
 #[test]
