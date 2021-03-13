@@ -1,3 +1,4 @@
+pub mod letter_and_digit;
 mod parse_util;
 
 use nom::{
