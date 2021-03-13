@@ -106,12 +106,9 @@ pub fn parse_import_decl(s: &str) -> IResult<&str, TopLevel> {
     let (s, _) = space1(s)?;
     // TODO: multiple '(' packages ')'
     let mut parser = opt(pair(alphanumeric1, space1));
-    let (s, pkg_name_opt_opt) = parser(s)?;
-    let pkg_name_opt = if let Some((pkg_name_opt, _)) = pkg_name_opt_opt {
-        Some(pkg_name_opt)
-    } else {
-        None
-    };
+    let (s, _pkg_name_opt) = parser(s)?;
+    // Take the left value for package name.
+    let pkg_name_opt = _pkg_name_opt.map(|(pkg_name, _)| pkg_name);
     let (s, pkg_path) = parse_string_literal(s)?;
     Ok((
         s,
