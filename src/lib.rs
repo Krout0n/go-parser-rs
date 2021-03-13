@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
 use nom::{
-    branch::alt, bytes::complete::tag, character::complete::alphanumeric1, combinator::opt,
-    sequence::pair,
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{alphanumeric1, space0},
+    combinator::opt,
+    sequence::{pair, tuple},
 };
 use nom::{
     bytes::streaming::take_while,
@@ -10,6 +13,8 @@ use nom::{
     sequence::delimited,
 };
 use nom::{character::complete::alpha1, IResult};
+
+use maplit::hashmap;
 
 #[derive(Debug, PartialEq)]
 pub enum GoType {
@@ -56,14 +61,20 @@ impl From<&str> for GoType {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct ArgTypes<'a>(HashMap<&'a str, GoType>);
+
+#[derive(Debug, PartialEq)]
+pub struct Function<'a> {
+    pub name: &'a str,
+    pub args: ArgTypes<'a>,
+    pub ret: GoType,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum TopLevel<'a> {
     Pkg(&'a str),
     Import(Vec<ImportDeclaration<'a>>),
-    Function {
-        name: String,
-        args: HashMap<String, GoType>,
-        ret: GoType,
-    },
+    Function(Function<'a>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -139,6 +150,33 @@ fn parse_string_literal(i: &str) -> nom::IResult<&str, &str> {
     Ok((rest, contents))
 }
 
+// FunctionDecl = "func" FunctionName Signature [ FunctionBody ] .
+// FunctionBody = . // TODO: Implement block.
+fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
+    let (s, _) = space0(s)?;
+    let (s, _) = tag("func")(s)?;
+    let (s, _) = space1(s)?;
+    let (s, name) = alphanumeric1(s)?;
+    let (s, args) = parse_parameters(s)?;
+    let ret = GoType::Int;
+    Ok((s, Function { name, args, ret }))
+}
+
+// Parameters     = "(" [ ParameterList [ "," ] ] ")" .
+// ParameterList  = ParameterDecl { "," ParameterDecl } .
+// ParameterDecl  = [ IdentifierList ] [ "..." ] Type .
+fn parse_parameters(s: &str) -> IResult<&str, ArgTypes> {
+    // (x int)
+    // TODO: (x, y int)
+    // TODO: (x int, y string)
+    let (s, _) = space0(s)?;
+    let parser = tuple((alphanumeric1, space1, parse_go_type));
+    let (s, (name, _, typ)) = delimited(char('('), parser, char(')'))(s)?;
+    let mut m = HashMap::new();
+    m.insert(name, typ);
+    Ok((s, ArgTypes(m)))
+}
+
 #[test]
 fn test_pkg_stmt() {
     assert_eq!(
@@ -195,4 +233,10 @@ fn test_go_type() {
     assert_eq!(parse_go_type("byte"), Ok(("", GoType::Byte)));
     assert_eq!(parse_go_type("rune"), Ok(("", GoType::Rune)));
     assert_eq!(parse_go_type("string"), Ok(("", GoType::String)));
+}
+
+#[test]
+fn test_parameters() {
+    let map = hashmap! {"x" => GoType::Int};
+    assert_eq!(parse_parameters("(x int)"), Ok(("", ArgTypes(map))));
 }
