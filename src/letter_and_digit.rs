@@ -35,3 +35,15 @@ pub fn parse_octal_digit(s: &str) -> IResult<&str, char> {
 pub fn parse_binary_digit(s: &str) -> IResult<&str, char> {
     one_of("01")(s)
 }
+
+///
+/// ```
+/// use go_parser_rs::letter_and_digit::parse_hex_digit;
+/// use nom::{Err, error::{Error,ErrorKind}};
+/// assert_eq!(parse_hex_digit("21c"), Ok(("1c", '2')));
+/// assert_eq!(parse_hex_digit("c1"),Ok(("1", 'c')));
+/// assert_eq!(parse_hex_digit(""), Err(Err::Error(Error::new("", ErrorKind::OneOf))));
+/// ```
+pub fn parse_hex_digit(s: &str) -> IResult<&str, char> {
+    one_of("0123456789abcdefABCDEF")(s)
+}
