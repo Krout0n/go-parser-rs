@@ -241,6 +241,25 @@ fn test_go_type() {
 }
 
 #[test]
+fn test_func_decl() {
+    assert_eq!(
+        parse_function_decl("func f (x int) string"),
+        Ok((
+            "",
+            Function {
+                name: "f",
+                params: Parameters(Some(ParameterList(vec![ParameterDecl {
+                    identifiers: Some(vec!["x"]),
+                    is_variadic: false,
+                    go_type: GoType::Int
+                }]))),
+                ret: GoType::String
+            }
+        ))
+    );
+}
+
+#[test]
 fn test_parameters() {
     assert_eq!(
         parse_parameters("(x int)"),
@@ -273,22 +292,6 @@ fn test_parameters() {
         ))
     );
 }
-
-// #[test]
-// fn test_func_decl() {
-//     let map = hashmap! {"x" => GoType::Int};
-//     assert_eq!(
-//         parse_function_decl("func f (x int) string"),
-//         Ok((
-//             "",
-//             Function {
-//                 name: "f",
-//                 args: ArgTypes(map),
-//                 ret: GoType::String
-//             }
-//         ))
-//     );
-// }
 
 #[test]
 fn test_parameter_list() {
