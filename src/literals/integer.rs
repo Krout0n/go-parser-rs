@@ -24,6 +24,24 @@ pub fn binary_digits(s: &str) -> IResult<&str, &str> {
     Ok((s, digits))
 }
 
+/// binary_lit = "0" ( "b" | "B" ) [ "_" ] binary_digits .
+///
+///```
+/// use go_parser_rs::literals::integer::binary_lit;
+/// assert_eq!(binary_lit("0b010"), Ok(("", "0b010")));
+/// assert_eq!(binary_lit("0B101"), Ok(("", "0B101")));
+/// assert_eq!(binary_lit("0b_01_1_1_10_0"), Ok(("", "0b_01_1_1_10_0")));
+/// assert!(binary_lit("0_B101").is_err()); // invalid: _ must separate successive digits
+///```
+pub fn binary_lit(s: &str) -> IResult<&str, &str> {
+    recognize(tuple((
+        tag("0"),
+        opt(alt((tag("b"), tag("B")))),
+        opt(tag("_")),
+        binary_digits,
+    )))(s)
+}
+
 /// octal_digits = octal_digit { [ "_" ] octal_digit }.
 /// ```
 /// use go_parser_rs::literals::integer::octal_digits;
