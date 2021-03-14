@@ -64,7 +64,7 @@ pub fn hex_digits(s: &str) -> IResult<&str, &str> {
 ///```
 /// use go_parser_rs::literals::integer::hex_lit;
 /// assert_eq!(hex_lit("0xBadFace"), Ok(("", "0xBadFace")));
-/// assert_eq!(hex_lit("0xBad_Face"), Ok(("", "0xBad_Face")));
+/// assert_eq!(hex_lit("0XBad_Face"), Ok(("", "0XBad_Face")));
 /// assert_eq!(hex_lit("0x_67_7a_2f_cc_40_c6"), Ok(("", "0x_67_7a_2f_cc_40_c6")));
 /// assert!(hex_lit("0_xBadFace").is_err()); // invalid: _ must separate successive digits
 ///```
