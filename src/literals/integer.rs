@@ -10,6 +10,20 @@ use nom::{
 
 use super::letter_and_digit::{binary_digit, decimal_digit, hex_digit, octal_digit};
 
+/// int_lit = decimal_lit | binary_lit | octal_lit | hex_lit .
+///
+///```
+/// use go_parser_rs::literals::integer::int_lit;
+/// assert_eq!(int_lit("1701411105727"), Ok(("", "1701411105727")));
+/// assert_eq!(int_lit("0b010"), Ok(("", "0b010")));
+/// assert_eq!(int_lit("0O600"), Ok(("", "0O600")));
+/// assert_eq!(int_lit("0xBadF4ce"), Ok(("", "0xBadF4ce")));
+///```
+pub fn int_lit(s: &str) -> IResult<&str, &str> {
+    // Calling `decimal_lit` should be last because it can parse only "0" when input is "0x~" "0b~"...
+    alt((binary_lit, octal_lit, hex_lit, decimal_lit))(s)
+}
+
 /// decimal_digits = decimal_digit { [ "_" ] decimal_digit } .
 /// ```
 /// use go_parser_rs::literals::integer::decimal_digits;
