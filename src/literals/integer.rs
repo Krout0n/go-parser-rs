@@ -7,7 +7,25 @@ use nom::{
     IResult,
 };
 
-use super::letter_and_digit::{binary_digit, hex_digit, octal_digit};
+use super::letter_and_digit::{binary_digit, decimal_digit, hex_digit, octal_digit};
+
+/// decimal_digits = decimal_digit { [ "_" ] decimal_digit } .
+/// ```
+/// use go_parser_rs::literals::integer::decimal_digits;
+/// assert_eq!(decimal_digits("17014114105727"), Ok(("", "17014114105727")));
+/// assert_eq!(decimal_digits("170_1411_105727"), Ok(("", "170_1411_105727")));
+/// assert!(decimal_digits("_42").is_err()); // an identifier, not an integer literal
+/// assert!(decimal_digits("42_").is_err()); // invalid: _ must separate successive digits
+/// assert!(decimal_digits("4__2").is_err()); // invalid: only one _ at a time
+/// ```
+pub fn decimal_digits(s: &str) -> IResult<&str, &str> {
+    let (s, digits) = recognize(pair(
+        decimal_digit,
+        many0(pair(opt(tag("_")), decimal_digit)),
+    ))(s)?;
+    let (s, _) = not(tag("_"))(s)?;
+    Ok((s, digits))
+}
 
 /// binary_digits = binary_digit { [ "_" ] binary_digit } .
 /// ```
