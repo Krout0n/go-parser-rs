@@ -1,6 +1,7 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
+    character::complete::one_of,
     combinator::{not, opt, recognize},
     multi::many0,
     sequence::{pair, tuple},
@@ -23,6 +24,27 @@ pub fn decimal_digits(s: &str) -> IResult<&str, &str> {
         decimal_digit,
         many0(pair(opt(tag("_")), decimal_digit)),
     ))(s)?;
+    let (s, _) = not(tag("_"))(s)?;
+    Ok((s, digits))
+}
+
+/// Note: Failed on some test cases now. use this function carefully.
+/// decimal_lit    = "0" | ( "1" … "9" ) [ [ "_" ] decimal_digits ].
+/// ```
+/// use go_parser_rs::literals::integer::decimal_lit;
+/// assert_eq!(decimal_lit("0"), Ok(("", "0")));
+/// assert_eq!(decimal_lit("123456789"), Ok(("", "123456789")));
+/// assert_eq!(decimal_lit("12_3_45_6789"), Ok(("", "12_3_45_6789")));
+/// assert!(decimal_lit("0123").is_err()); // TODO: Fix this case, invalid: non zero literal can start with 0.
+/// assert!(decimal_lit("00").is_err()); // TODO: Fix this case, invalid: zero literal can't start with multi times 0.
+/// assert!(decimal_lit("12__3_45_6789").is_err()); // invalid: only one _ at a time
+/// ```
+pub fn decimal_lit(s: &str) -> IResult<&str, &str> {
+    // ( "1" … "9" )
+    let _1to9 = one_of("123456789");
+    // [ [ "_" ] decimal_digits ]
+    let parser = many0(pair(opt(tag("_")), decimal_digits));
+    let (s, digits) = recognize(alt((tag("0"), recognize(pair(_1to9, parser)))))(s)?;
     let (s, _) = not(tag("_"))(s)?;
     Ok((s, digits))
 }
