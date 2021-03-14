@@ -7,7 +7,22 @@ use nom::{
     IResult,
 };
 
-use super::letter_and_digit::{hex_digit, octal_digit};
+use super::letter_and_digit::{binary_digit, hex_digit, octal_digit};
+
+/// binary_digits = binary_digit { [ "_" ] binary_digit } .
+/// ```
+/// use go_parser_rs::literals::integer::binary_digits;
+/// assert_eq!(binary_digits("0101011"), Ok(("", "0101011")));
+/// assert_eq!(binary_digits("1_01_0_1_010_100111_01_0100010"), Ok(("", "1_01_0_1_010_100111_01_0100010")));
+/// assert!(binary_digits("_01").is_err()); // an identifier, not an integer literal
+/// assert!(binary_digits("0_1_").is_err()); // invalid: _ must separate successive digits
+/// assert!(binary_digits("0__1").is_err()); // invalid: only one _ at a time
+/// ```
+pub fn binary_digits(s: &str) -> IResult<&str, &str> {
+    let (s, digits) = recognize(pair(binary_digit, many0(pair(opt(tag("_")), binary_digit))))(s)?;
+    let (s, _) = not(tag("_"))(s)?;
+    Ok((s, digits))
+}
 
 /// octal_digits = octal_digit { [ "_" ] octal_digit }.
 /// ```
