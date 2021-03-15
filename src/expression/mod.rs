@@ -13,6 +13,14 @@ pub enum Expression {
 //     2             &&
 //     1             ||
 
+/// ```
+/// use go_parser_rs::expression::and_op;
+/// assert_eq!(and_op("&&true"), Ok(("true", "&&")));
+/// ```
+pub fn and_op(s: &str) -> IResult<&str, &str> {
+    symbol("&&")(s)
+}
+
 /// rel_op = "==" | "!=" | "<" | "<="| ">" | ">=" .
 /// ```
 /// use go_parser_rs::expression::rel_op;
