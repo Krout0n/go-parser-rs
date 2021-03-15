@@ -1,3 +1,4 @@
+pub mod expression;
 pub mod identifier;
 pub mod literals;
 mod parse_util;
