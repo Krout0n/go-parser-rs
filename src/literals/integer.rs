@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::one_of,
-    combinator::{not, opt, recognize},
+    combinator::{map, not, opt, recognize},
     multi::many0,
     sequence::{pair, tuple},
     IResult,
@@ -10,18 +10,49 @@ use nom::{
 
 use super::letter_and_digit::{binary_digit, decimal_digit, hex_digit, octal_digit};
 
+#[derive(Debug, PartialEq)]
+pub enum IntLit<'a> {
+    DecimalLit(&'a str),
+    BinaryLit(&'a str),
+    OctalLit(&'a str),
+    HexLit(&'a str),
+}
+
+impl<'a> IntLit<'a> {
+    pub fn decimal_lit(v: &'a str) -> Self {
+        Self::DecimalLit(v)
+    }
+
+    pub fn binary_lit(v: &'a str) -> Self {
+        Self::BinaryLit(v)
+    }
+
+    pub fn octal_lit(v: &'a str) -> Self {
+        Self::OctalLit(v)
+    }
+
+    pub fn hex_lit(v: &'a str) -> Self {
+        Self::HexLit(v)
+    }
+}
+
 /// int_lit = decimal_lit | binary_lit | octal_lit | hex_lit .
 ///
 ///```
-/// use go_parser_rs::literals::integer::int_lit;
-/// assert_eq!(int_lit("1701411105727"), Ok(("", "1701411105727")));
-/// assert_eq!(int_lit("0b010"), Ok(("", "0b010")));
-/// assert_eq!(int_lit("0O600"), Ok(("", "0O600")));
-/// assert_eq!(int_lit("0xBadF4ce"), Ok(("", "0xBadF4ce")));
+/// use go_parser_rs::literals::integer::{int_lit, IntLit};
+/// assert_eq!(int_lit("1701411105727"), Ok(("", IntLit::decimal_lit("1701411105727"))));
+/// assert_eq!(int_lit("0b010"), Ok(("", IntLit::binary_lit("0b010"))));
+/// assert_eq!(int_lit("0O600"), Ok(("", IntLit::octal_lit("0O600"))));
+/// assert_eq!(int_lit("0xBadF4ce"), Ok(("", IntLit::hex_lit("0xBadF4ce"))));
 ///```
-pub fn int_lit(s: &str) -> IResult<&str, &str> {
+pub fn int_lit(s: &str) -> IResult<&str, IntLit> {
     // Calling `decimal_lit` should be last because it can parse only "0" when input is "0x~" "0b~"...
-    alt((binary_lit, octal_lit, hex_lit, decimal_lit))(s)
+    alt((
+        map(binary_lit, IntLit::binary_lit),
+        map(octal_lit, IntLit::octal_lit),
+        map(hex_lit, IntLit::hex_lit),
+        map(decimal_lit, IntLit::decimal_lit),
+    ))(s)
 }
 
 /// decimal_digits = decimal_digit { [ "_" ] decimal_digit } .
