@@ -6,6 +6,19 @@ pub enum Expression {
     // UnaryExpr(UnaryExpr),
 }
 
+/// add_op = "+" | "-" | "|" | "^" .
+/// ```
+/// use go_parser_rs::expression::add_op;
+/// assert_eq!(add_op("+1"), Ok(("1", "+")));
+/// assert_eq!(add_op("-1"), Ok(("1", "-")));
+/// assert_eq!(add_op("|3"), Ok(("3", "|")));
+/// assert_eq!(add_op("^a"), Ok(("a", "^")));
+/// assert!(add_op("*a").is_err());
+/// ```
+pub fn add_op(s: &str) -> IResult<&str, &str> {
+    alt((symbol("+"), symbol("-"), symbol("|"), symbol("^")))(s)
+}
+
 /// unary_op   = "+" | "-" | "!" | "^" | "*" | "&" | "<-" .
 /// ```
 /// use go_parser_rs::expression::unary_op;
