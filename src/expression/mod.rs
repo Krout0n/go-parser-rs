@@ -27,3 +27,26 @@ pub fn unary_op(s: &str) -> IResult<&str, &str> {
         symbol("<-"),
     ))(s)
 }
+
+/// mul_op = "*" | "/" | "%" | "<<" | ">>" | "&" | "&^" .
+/// ```
+/// use go_parser_rs::expression::mul_op;
+/// assert_eq!(mul_op("*1"), Ok(("1", "*")));
+/// assert_eq!(mul_op("/1"), Ok(("1", "/")));
+/// assert_eq!(mul_op("% 2"), Ok(("2", "%")));
+/// assert_eq!(mul_op("<<2"), Ok(("2", "<<")));
+/// assert_eq!(mul_op(">>1"), Ok(("1", ">>")));
+/// assert_eq!(mul_op("& x"), Ok(("x", "&")));
+/// assert_eq!(mul_op("&^ x"), Ok(("x", "&^")));
+/// ```
+pub fn mul_op(s: &str) -> IResult<&str, &str> {
+    alt((
+        symbol("*"),
+        symbol("/"),
+        symbol("%"),
+        symbol("<<"),
+        symbol(">>"),
+        symbol("&^"),
+        symbol("&"),
+    ))(s)
+}
