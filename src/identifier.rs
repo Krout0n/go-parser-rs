@@ -6,7 +6,7 @@ use crate::parse_util::{identifier, symbol};
 pub struct QualifiedIdent<'a>(&'a str, &'a str);
 pub fn qualified_ident<'a>(s: &'a str) -> IResult<&'a str, QualifiedIdent<'a>> {
     let (s, pkg_name) = identifier(s)?;
-    let (s, _) = symbol('.')(s)?;
+    let (s, _) = symbol(".")(s)?;
     let (s, ident) = identifier(s)?;
     Ok((s, QualifiedIdent(pkg_name, ident)))
 }

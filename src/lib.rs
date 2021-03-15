@@ -119,7 +119,8 @@ fn parse_go_type(s: &str) -> IResult<&str, GoType> {
 // Thanks to drumato!
 // https://github.com/Drumato/peachili/blob/codegen/src/compiler/common/frontend/pass/parser/primitive.rs#L14
 fn parse_string_literal(i: &str) -> nom::IResult<&str, &str> {
-    let (rest, contents) = delimited(symbol('"'), take_while(|b: char| b != '"'), symbol('"'))(i)?;
+    let (rest, contents) =
+        delimited(symbol("\""), take_while(|b: char| b != '"'), symbol("\""))(i)?;
     Ok((rest, contents))
 }
 
@@ -139,8 +140,8 @@ fn parse_function_decl<'a>(s: &'a str) -> IResult<&'a str, Function<'a>> {
 pub struct Parameters<'a>(Option<ParameterList<'a>>);
 // Parameters     = "(" [ ParameterList [ "," ] ] ")" .
 fn parse_parameters(s: &str) -> IResult<&str, Parameters> {
-    let parse_parameter_list_opt = opt(tuple((parse_parameter_list, opt(symbol(',')))));
-    let (s, parameter_list_opt) = delimited(symbol('('), parse_parameter_list_opt, symbol(')'))(s)?;
+    let parse_parameter_list_opt = opt(tuple((parse_parameter_list, opt(symbol(",")))));
+    let (s, parameter_list_opt) = delimited(symbol("("), parse_parameter_list_opt, symbol(")"))(s)?;
     let parameter_list = parameter_list_opt.map(|(s, _)| s);
     Ok((s, Parameters(parameter_list)))
 }
@@ -150,7 +151,7 @@ pub struct ParameterList<'a>(Vec<ParameterDecl<'a>>);
 // ParameterList  = ParameterDecl { "," ParameterDecl } .
 fn parse_parameter_list<'a>(s: &'a str) -> IResult<&'a str, ParameterList<'a>> {
     let (s, f) = parse_parameter_decl(s)?;
-    let (s, mut decls) = many0(preceded(symbol(','), parse_parameter_decl))(s)?;
+    let (s, mut decls) = many0(preceded(symbol(","), parse_parameter_decl))(s)?;
     decls.insert(0, f);
     Ok((s, ParameterList(decls)))
 }
@@ -180,7 +181,7 @@ fn parse_parameter_decl(s: &str) -> IResult<&str, ParameterDecl> {
 // IdentifierList = identifier { "," identifier } .
 fn parse_identifier_list(s: &str) -> IResult<&str, Vec<&str>> {
     let (s, i) = identifier(s)?;
-    let (s, mut result) = many0(preceded(symbol(','), identifier))(s)?;
+    let (s, mut result) = many0(preceded(symbol(","), identifier))(s)?;
     result.insert(0, i);
     Ok((s, result))
 }
