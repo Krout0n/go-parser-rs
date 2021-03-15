@@ -1,6 +1,7 @@
 pub mod identifier;
 pub mod literals;
 mod parse_util;
+pub mod typ;
 
 use nom::{
     bytes::streaming::take_while,
