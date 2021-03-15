@@ -3,15 +3,27 @@ use nom::IResult;
 use crate::parse_util::{identifier, symbol};
 
 #[derive(Debug, PartialEq)]
-pub struct QualifiedIdent<'a>(&'a str, &'a str);
-pub fn qualified_ident<'a>(s: &'a str) -> IResult<&'a str, QualifiedIdent<'a>> {
-    let (s, pkg_name) = identifier(s)?;
-    let (s, _) = symbol(".")(s)?;
-    let (s, ident) = identifier(s)?;
-    Ok((s, QualifiedIdent(pkg_name, ident)))
+pub struct QualifiedIdent<'a> {
+    pub package_name: &'a str,
+    pub identifier: &'a str,
 }
 
-#[test]
-fn test_qualified_ident() {
-    assert_eq!(qualified_ident("x.y"), Ok(("", QualifiedIdent("x", "y"))))
+impl<'a> QualifiedIdent<'a> {
+    /// QualifiedIdent = PackageName "." identifier .
+    /// ```
+    /// use go_parser_rs::identifier::QualifiedIdent;
+    /// assert_eq!(QualifiedIdent::parse("x.y"), Ok(("", QualifiedIdent{ package_name: "x", identifier: "y" })));
+    /// ```
+    pub fn parse(s: &'a str) -> IResult<&'a str, QualifiedIdent<'a>> {
+        let (s, package_name) = identifier(s)?;
+        let (s, _) = symbol(".")(s)?;
+        let (s, identifier) = identifier(s)?;
+        Ok((
+            s,
+            QualifiedIdent {
+                package_name,
+                identifier,
+            },
+        ))
+    }
 }
