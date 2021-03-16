@@ -56,6 +56,7 @@ impl<'a> ASTable<'a> for Unary<'a> {
 #[derive(Debug, PartialEq)]
 pub enum UnaryExpr<'a> {
     PrimaryExpr(PrimaryExpr<'a>),
+    Unary(Unary<'a>),
 }
 
 impl<'a> ASTable<'a> for UnaryExpr<'a> {
@@ -66,7 +67,10 @@ impl<'a> ASTable<'a> for UnaryExpr<'a> {
     /// assert_eq!(UnaryExpr::parse("1+2"), Ok(("+2", UnaryExpr::PrimaryExpr(PrimaryExpr::Operand(Operand::Literal(Literal::IntLit(IntLit::DecimalLit("1"))))))));
     /// ```
     fn parse(s: &'a str) -> IResult<&'a str, Self> {
-        map(PrimaryExpr::parse, UnaryExpr::PrimaryExpr)(s)
+        alt((
+            map(Unary::parse, UnaryExpr::Unary),
+            map(PrimaryExpr::parse, UnaryExpr::PrimaryExpr),
+        ))(s)
     }
 }
 
