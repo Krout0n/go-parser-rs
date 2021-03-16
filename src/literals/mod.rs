@@ -14,6 +14,7 @@ pub mod rune;
 ///
 /// Literal     = BasicLit | CompositeLit | FunctionLit .
 /// OperandName = identifier | QualifiedIdent .
+#[derive(Debug, PartialEq)]
 pub enum Literal<'a> {
     /// BasicLit    = int_lit | float_lit | imaginary_lit | rune_lit | string_lit .
     IntLit(IntLit<'a>),

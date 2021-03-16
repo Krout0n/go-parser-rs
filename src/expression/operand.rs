@@ -7,10 +7,30 @@ use crate::{
 use super::Expression;
 
 /// Operand = Literal | OperandName | "(" Expression ")"
+#[derive(Debug, PartialEq)]
 pub enum Operand<'a> {
     Literal(Literal<'a>),
     OperandName(OperandName<'a>),
     Parenthesized(Expression),
+}
+
+impl<'a> ASTable<'a> for Operand<'a> {
+    /// ```
+    /// use go_parser_rs::expression::operand::{Operand, OperandName};
+    /// use go_parser_rs::identifier::QualifiedIdent;
+    /// use go_parser_rs::literals::integer::IntLit;
+    /// use go_parser_rs::literals::Literal;
+    /// use go_parser_rs::astable::ASTable;
+    /// assert_eq!(Operand::parse("1+2"), Ok(("+2", Operand::Literal(Literal::IntLit(IntLit::DecimalLit("1"))))));
+    /// assert_eq!(Operand::parse("x.y"), Ok(("", Operand::OperandName(OperandName::QualifiedIdent(QualifiedIdent{package_name: "x", identifier: "y"})))));
+    /// ```
+    fn parse(s: &'a str) -> IResult<&'a str, Self> {
+        alt((
+            map(Literal::parse, Operand::Literal),
+            map(OperandName::parse, Operand::OperandName),
+            // TODO: Add Parenthesized
+        ))(s)
+    }
 }
 
 #[derive(Debug, PartialEq)]
