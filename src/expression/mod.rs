@@ -1,7 +1,9 @@
 pub mod operand;
-use nom::{branch::alt, IResult};
+use nom::{branch::alt, combinator::map, IResult};
 
-use crate::parse_util::symbol;
+use crate::{astable::ASTable, parse_util::symbol};
+
+use self::operand::Operand;
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     // UnaryExpr(UnaryExpr),
@@ -13,6 +15,23 @@ pub enum Expression {
 //     3             ==  !=  <  <=  >  >=
 //     2             &&
 //     1             ||
+
+#[derive(Debug, PartialEq)]
+pub enum PrimaryExpr<'a> {
+    Operand(Operand<'a>),
+}
+
+impl<'a> ASTable<'a> for PrimaryExpr<'a> {
+    /// ```
+    /// use go_parser_rs::astable::ASTable;
+    /// use go_parser_rs::expression::{PrimaryExpr, operand::{Operand, OperandName}};
+    /// use go_parser_rs::literals::{integer::IntLit, Literal};
+    /// assert_eq!(PrimaryExpr::parse("1+2"), Ok(("+2", PrimaryExpr::Operand(Operand::Literal(Literal::IntLit(IntLit::DecimalLit("1")))))));
+    /// ```
+    fn parse(s: &'a str) -> IResult<&'a str, Self> {
+        map(Operand::parse, PrimaryExpr::Operand)(s)
+    }
+}
 
 /// ```
 /// use go_parser_rs::expression::or_op;
