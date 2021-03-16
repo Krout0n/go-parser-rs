@@ -1,3 +1,4 @@
+pub mod operand;
 use nom::{branch::alt, IResult};
 
 use crate::parse_util::symbol;
