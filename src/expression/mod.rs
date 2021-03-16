@@ -17,6 +17,43 @@ pub enum Expression {
 //     1             ||
 
 #[derive(Debug, PartialEq)]
+pub struct Unary<'a> {
+    pub op: &'a str,
+    pub expr: Box<UnaryExpr<'a>>,
+}
+
+impl<'a> ASTable<'a> for Unary<'a> {
+    /// ```
+    /// use go_parser_rs::astable::ASTable;
+    /// use go_parser_rs::expression::{Unary, UnaryExpr, PrimaryExpr, operand::{Operand, OperandName}};
+    /// use go_parser_rs::literals::{integer::IntLit, Literal};
+    /// assert_eq!(
+    ///    Unary::parse("-1+2"),
+    ///    Ok((
+    ///        "+2",
+    ///        Unary {
+    ///            op: "-",
+    ///            expr: Box::new(UnaryExpr::PrimaryExpr(PrimaryExpr::Operand(
+    ///                Operand::Literal(Literal::IntLit(IntLit::DecimalLit("1")))
+    ///            )))
+    ///        }
+    ///    ))
+    /// );
+    /// ```
+    fn parse(s: &'a str) -> IResult<&'a str, Self> {
+        let (s, op) = unary_op(s)?;
+        let (s, expr) = UnaryExpr::parse(s)?;
+        Ok((
+            s,
+            Unary {
+                op,
+                expr: Box::new(expr),
+            },
+        ))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum UnaryExpr<'a> {
     PrimaryExpr(PrimaryExpr<'a>),
 }
