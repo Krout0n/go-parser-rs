@@ -1,7 +1,7 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::one_of,
+    character::complete::{one_of, space0},
     combinator::{map, not, opt, recognize},
     multi::many0,
     sequence::{pair, tuple},
@@ -41,18 +41,20 @@ impl<'a> IntLit<'a> {
 ///```
 /// use go_parser_rs::literals::integer::{int_lit, IntLit};
 /// assert_eq!(int_lit("1701411105727"), Ok(("", IntLit::decimal_lit("1701411105727"))));
-/// assert_eq!(int_lit("0b010"), Ok(("", IntLit::binary_lit("0b010"))));
+/// assert_eq!(int_lit("0b010  "), Ok(("", IntLit::binary_lit("0b010"))));
 /// assert_eq!(int_lit("0O600"), Ok(("", IntLit::octal_lit("0O600"))));
 /// assert_eq!(int_lit("0xBadF4ce"), Ok(("", IntLit::hex_lit("0xBadF4ce"))));
 ///```
 pub fn int_lit(s: &str) -> IResult<&str, IntLit> {
     // Calling `decimal_lit` should be last because it can parse only "0" when input is "0x~" "0b~"...
-    alt((
+    let (s, int) = alt((
         map(binary_lit, IntLit::binary_lit),
         map(octal_lit, IntLit::octal_lit),
         map(hex_lit, IntLit::hex_lit),
         map(decimal_lit, IntLit::decimal_lit),
-    ))(s)
+    ))(s)?;
+    let (s, _) = space0(s)?;
+    Ok((s, int))
 }
 
 /// decimal_digits = decimal_digit { [ "_" ] decimal_digit } .

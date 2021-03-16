@@ -28,7 +28,7 @@ impl<'a> ASTable<'a> for Unary<'a> {
     /// use go_parser_rs::expression::{Unary, UnaryExpr, PrimaryExpr, operand::{Operand, OperandName}};
     /// use go_parser_rs::literals::{integer::IntLit, Literal};
     /// assert_eq!(
-    ///    Unary::parse("-1+2"),
+    ///    Unary::parse("- 1 +2"),
     ///    Ok((
     ///        "+2",
     ///        Unary {
