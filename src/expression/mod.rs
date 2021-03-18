@@ -1,5 +1,9 @@
 pub mod operand;
-use nom::{branch::alt, combinator::map, IResult};
+use nom::{
+    branch::alt,
+    combinator::{map, opt},
+    IResult, Parser,
+};
 
 use crate::{astable::ASTable, parse_util::symbol};
 
@@ -14,12 +18,35 @@ pub enum Expression<'a> {
     },
 }
 
-// Precedence    Operator
-//     5             *  /  %  <<  >>  &  &^
-//     4             +  -  |  ^
-//     3             ==  !=  <  <=  >  >=
-//     2             &&
-//     1             ||
+impl<'a> Expression<'a> {
+    // Precedence    Operator
+    //     5             *  /  %  <<  >>  &  &^
+    //     4             +  -  |  ^
+    //     3             ==  !=  <  <=  >  >=
+    //     2             &&
+    //     1             ||
+
+    /// ```
+    /// use go_parser_rs::expression::Expression;
+    /// assert_eq!(Expression::parse_mul_expr("1").unwrap().0, "");
+    /// assert_eq!(Expression::parse_mul_expr("1*2 +3").unwrap().0, "+3");
+    /// assert_eq!(Expression::parse_mul_expr("1*2 *33").unwrap().0, "");
+    /// ```
+    pub fn parse_mul_expr(s: &'a str) -> IResult<&'a str, Self> {
+        let mut parser = map(UnaryExpr::parse, |expr| Expression::UnaryExpr(expr));
+        let (mut s, mut left) = parser.parse(s)?;
+        while let (a, Some(op)) = opt(mul_op)(s)? {
+            let result = parser.parse(a)?;
+            left = Expression::BinExpr {
+                left: Box::new(left),
+                op,
+                right: Box::new(result.1),
+            };
+            s = result.0;
+        }
+        Ok((s, left))
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Unary<'a> {
