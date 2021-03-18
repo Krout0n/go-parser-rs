@@ -11,7 +11,7 @@ use super::Expression;
 pub enum Operand<'a> {
     Literal(Literal<'a>),
     OperandName(OperandName<'a>),
-    Parenthesized(Expression),
+    Parenthesized(Box<Expression<'a>>),
 }
 
 impl<'a> ASTable<'a> for Operand<'a> {

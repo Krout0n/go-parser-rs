@@ -5,8 +5,13 @@ use crate::{astable::ASTable, parse_util::symbol};
 
 use self::operand::Operand;
 #[derive(Debug, PartialEq)]
-pub enum Expression {
-    // UnaryExpr(UnaryExpr),
+pub enum Expression<'a> {
+    UnaryExpr(UnaryExpr<'a>),
+    BinExpr {
+        left: Box<Self>,
+        op: &'a str,
+        right: Box<Self>,
+    },
 }
 
 // Precedence    Operator
