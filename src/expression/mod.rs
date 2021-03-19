@@ -46,6 +46,27 @@ impl<'a> Expression<'a> {
         }
         Ok((s, left))
     }
+
+    /// ```
+    /// use go_parser_rs::expression::Expression;
+    /// assert_eq!(Expression::parse_add_expr("1").unwrap().0, "");
+    /// assert_eq!(Expression::parse_add_expr("1*2 +3").unwrap().0, "");
+    /// assert_eq!(Expression::parse_add_expr("1*2 *33").unwrap().0, "");
+    /// assert_eq!(Expression::parse_add_expr("true == false").unwrap().0, "== false");
+    /// ```
+    pub fn parse_add_expr(s: &'a str) -> IResult<&'a str, Self> {
+        let (mut s, mut left) = Expression::parse_mul_expr(s)?;
+        while let (a, Some(op)) = opt(add_op)(s)? {
+            let result = Expression::parse_mul_expr(a)?;
+            left = Expression::BinExpr {
+                left: Box::new(left),
+                op,
+                right: Box::new(result.1),
+            };
+            s = result.0;
+        }
+        Ok((s, left))
+    }
 }
 
 #[derive(Debug, PartialEq)]
