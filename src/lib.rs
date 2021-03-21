@@ -3,6 +3,7 @@ pub mod expression;
 pub mod identifier;
 pub mod literals;
 mod parse_util;
+pub mod tokenize;
 pub mod typ;
 
 use nom::{
